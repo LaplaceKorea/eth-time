@@ -1,17 +1,7 @@
-proc ::rpcUrl {network} {
-    return "http://localhost:8545"
-}
+# Deploy smart contract to network
 
-proc ::setupEnv {network} {
-    set rpcUrl [::rpcUrl $network] 
-    set ::env(ETH_RPC_URL) $rpcUrl
-
-    if [info exists ::env(ETH_FROM)] {
-        set ethFrom $::env(ETH_FROM)
-    } else {
-        error "missing ETH_FROM"
-    }
-}
+set where [file dirname [info script]]
+source [file join $where common.tcl]
 
 set network [lindex $argv 0]
 set contractName [lindex $argv 1]
