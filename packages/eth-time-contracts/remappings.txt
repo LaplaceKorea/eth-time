@@ -2,3 +2,4 @@
 ds-test/=lib/ds-test/src/
 @base64-sol/=lib/base64-sol/
 @openzeppelin/=lib/openzeppelin-contracts/contracts/
+@bpb-datetime/=lib/BokkyPooBahsDateTimeLibrary/contracts/

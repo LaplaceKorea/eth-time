@@ -2,12 +2,16 @@
 pragma solidity 0.8.10;
 
 import {Base64} from "@base64-sol/base64.sol";
+import {BokkyPooBahsDateTimeLibrary} from "@bpb-datetime/BokkyPooBahsDateTimeLibrary.sol";
 import {ERC721} from "@solmate/tokens/ERC721.sol";
 import {Strings} from "@openzeppelin/utils/Strings.sol";
 
 
 /// @notice The NFT with the given id does not exist.
 error EthTime__DoesNotExist();
+
+/// @notice The number is outside the supported range.
+error EthTime__NumberOutOfRange();
 
 /// @notice ETH-Time NFT contract.
 contract EthTime is ERC721("ETH Time", "ETHT") {
@@ -113,10 +117,8 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
         historyAccumulator[id] ^= uint160(to);
     }
 
-    bytes constant groupOpenStart = '<g transform="translate(';
-    bytes constant groupOpenEnd = ')">';
-    bytes constant groupClose = '</g>';
-    bytes constant dots = '<circle cx="20" cy="36" r="6" fill="#FFFFFF"/><circle cx="20" cy="64" r="6" fill="#FFFFFF"/>';
+    bytes constant onColor = "FFF";
+    bytes constant offColor = "333";
 
     /// @dev Generate the SVG image for the given NFT.
     /// @param id the NFT unique id.
@@ -129,57 +131,93 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
             revert EthTime__DoesNotExist();
         }
 
+        uint256 hour = BokkyPooBahsDateTimeLibrary.getHour(block.timestamp);
+        uint256 minute = BokkyPooBahsDateTimeLibrary.getMinute(block.timestamp);
+
         return
             Base64.encode(
                 bytes.concat(
                     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">',
                     '<linearGradient id="bg" gradientTransform="rotate(90)">',
-                    '<stop offset="0%" stop-color="hsl(10, 100%, 50%)" /><stop offset="100%" stop-color="hsl(100, 100%, 50%)" />',
+                    '<stop offset="0%" stop-color="hsl(20, 100%, 89%)" /><stop offset="100%" stop-color="hsl(100, 77%, 36%)"/>',
                     '</linearGradient>',
-                    '<rect x="0" y="0" width="1000" height="1000" fill="url(#bg)" />',
-                    _dots(500, 500),
+                    '<rect x="0" y="0" width="1000" height="1000" fill="url(#bg)"/>',
+                    _binaryHour(hour),
+                    _binaryMinute(minute),
                     '</svg>'
                 )
             );
     }
 
-    function _dots(uint16 x, uint16 y)
+    function _binaryHour(uint256 hour)
         internal
         pure
         returns (bytes memory)
     {
+        if (hour > 24) {
+            revert EthTime__NumberOutOfRange();
+        }
+
+        bytes[7] memory colors = _binaryColor(hour);
+
         return
             bytes.concat(
-                groupOpenStart,
-                _uintToBytes(x),
-                ',',
-                _uintToBytes(y),
-                groupOpenEnd,
-                dots,
-                groupClose
+                '<circle cx="665" cy="875" r="25" fill="#', colors[0], '"/>',
+                '<circle cx="665" cy="805" r="25" fill="#', colors[1], '"/>',
+                // skip colors[2]
+                '<circle cx="735" cy="875" r="25" fill="#', colors[3], '"/>',
+                '<circle cx="735" cy="805" r="25" fill="#', colors[4], '"/>',
+                '<circle cx="735" cy="735" r="25" fill="#', colors[5], '"/>',
+                '<circle cx="735" cy="665" r="25" fill="#', colors[6], '"/>'
             );
     }
 
-    /// @dev Taken from DVD Logo NFT 0x68a65e7968fbacd2387dad316918da69a7011608
-    function _uintToBytes(uint n)
+    function _binaryMinute(uint256 minute)
         internal
         pure
         returns (bytes memory)
     {
-        if (n == 0) {
-            return bytes("0");
+        if (minute > 59) {
+            revert EthTime__NumberOutOfRange();
         }
-        bytes memory reversed = new bytes(100);
-        uint len = 0;
-        while (n != 0) {
-            uint r = n % 10;
-            n = n / 10;
-            reversed[len++] = bytes1(uint8(48 + r));
+
+        bytes[7] memory colors = _binaryColor(minute);
+
+        return
+            bytes.concat(
+                '<circle cx="805" cy="875" r="25" fill="#', colors[0], '"/>',
+                '<circle cx="805" cy="805" r="25" fill="#', colors[1], '"/>',
+                '<circle cx="805" cy="735" r="25" fill="#', colors[2], '"/>',
+
+                '<circle cx="875" cy="875" r="25" fill="#', colors[3], '"/>',
+                '<circle cx="875" cy="805" r="25" fill="#', colors[4], '"/>',
+                '<circle cx="875" cy="735" r="25" fill="#', colors[5], '"/>',
+                '<circle cx="875" cy="665" r="25" fill="#', colors[6], '"/>'
+            );
+    }
+
+    /// @dev Returns the colors to be used to display the time.
+    /// The first 3 bytes are used for the first digit, the remaining 4 bytes
+    /// for the second digit.
+    function _binaryColor(uint256 n)
+        internal
+        pure
+        returns (bytes[7] memory)
+    {
+        unchecked {
+            uint256 firstDigit = n / 10;
+            uint256 secondDigit = n % 10;
+
+            return [
+                (firstDigit & 0x1 != 0) ? onColor : offColor,
+                (firstDigit & 0x2 != 0) ? onColor : offColor,
+                (firstDigit & 0x4 != 0) ? onColor : offColor,
+
+                (secondDigit & 0x1 != 0) ? onColor : offColor,
+                (secondDigit & 0x2 != 0) ? onColor : offColor,
+                (secondDigit & 0x4 != 0) ? onColor : offColor,
+                (secondDigit & 0x8 != 0) ? onColor : offColor
+            ];
         }
-        bytes memory buf = new bytes(len);
-        for (uint i= 0; i < len; i++) {
-            buf[i] = reversed[len - i - 1];
-        }
-        return buf;
     }
 }
