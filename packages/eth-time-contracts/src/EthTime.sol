@@ -114,7 +114,7 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
         internal
     {
         // effects: xor existing value with address bytes content.
-        historyAccumulator[id] ^= uint160(to);
+        historyAccumulator[id] ^= uint160(to) << 32;
     }
 
     bytes constant onColor = "FFF";
@@ -134,12 +134,16 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
         uint256 hour = BokkyPooBahsDateTimeLibrary.getHour(block.timestamp);
         uint256 minute = BokkyPooBahsDateTimeLibrary.getMinute(block.timestamp);
 
+        bytes memory topHue = _computeHue(historyAccumulator[id], id);
+        bytes memory bottomHue = _computeHue(uint160(ownerOf[id]), id);
+
         return
             Base64.encode(
                 bytes.concat(
                     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">',
                     '<linearGradient id="bg" gradientTransform="rotate(90)">',
-                    '<stop offset="0%" stop-color="hsl(20, 100%, 89%)" /><stop offset="100%" stop-color="hsl(100, 77%, 36%)"/>',
+                    '<stop offset="0%" stop-color="hsl(', topHue, ',100%,89%)"/>',
+                    '<stop offset="100%" stop-color="hsl(', bottomHue, ',77%,36%)"/>',
                     '</linearGradient>',
                     '<rect x="0" y="0" width="1000" height="1000" fill="url(#bg)"/>',
                     _binaryHour(hour),
@@ -219,5 +223,23 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
                 (secondDigit & 0x8 != 0) ? onColor : offColor
             ];
         }
+    }
+
+    function _computeHue(uint160 n, uint256 id)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        bytes20 b = bytes20(n ^ uint160(id));
+        uint16 acc = 0;
+        unchecked {
+            uint16 t;
+            for (uint8 i = 0; i < 10; i++) {
+                t = uint16(bytes2(b[2*i]) | (bytes2(b[2*i+1]) << 8));
+                acc ^= t;
+            }
+        }
+        acc = acc % 360;
+        return bytes(Strings.toString(acc));
     }
 }

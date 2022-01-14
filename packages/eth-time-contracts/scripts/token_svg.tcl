@@ -10,6 +10,10 @@ set outfile [lindex $argv 3]
 
 ::setupEnv $network
 
+set selector "historyAccumulator(uint256)"
+set historyAcc [exec seth call $address $selector $tokenId]
+puts $historyAcc
+
 set selector "tokenURI(uint256)"
 set encMeta [exec seth call $address $selector $tokenId | seth --to-ascii]
 
