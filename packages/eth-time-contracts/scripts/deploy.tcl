@@ -4,8 +4,8 @@ set where [file dirname [info script]]
 source [file join $where common.tcl]
 
 set network [lindex $argv 0]
-set contractName [lindex $argv 1]
-set contractPath [lindex $argv 2]
+set contractName "EthTime"
+set contractPath "src/EthTime.sol"
 
 ::setupEnv $network
 

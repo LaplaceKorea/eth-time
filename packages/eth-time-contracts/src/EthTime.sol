@@ -128,6 +128,10 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
             Base64.encode(
                 bytes.concat(
                     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">',
+                    '<linearGradient id="bg" gradientTransform="rotate(90)">',
+                    '<stop offset="0%" stop-color="hsl(10, 100%, 50%)" /><stop offset="100%" stop-color="hsl(100, 100%, 50%)" />',
+                    '</linearGradient>',
+                    '<rect x="0" y="0" width="1000" height="1000" fill="url(#bg)" />',
                     '</svg>'
                 )
             );
