@@ -6,6 +6,9 @@ import {ERC721} from "@solmate/tokens/ERC721.sol";
 import {Strings} from "@openzeppelin/utils/Strings.sol";
 
 
+/// @notice The NFT with the given id does not exist.
+error EthTime__DoesNotExist();
+
 /// @notice ETH-Time NFT contract.
 contract EthTime is ERC721("ETH Time", "ETHT") {
     //////////////////////////////////////////////////////////////////////////
@@ -117,6 +120,10 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
         view
         returns (string memory)
     {
+        if (ownerOf[id] == address(0)) {
+            revert EthTime__DoesNotExist();
+        }
+
         return
             Base64.encode(
                 bytes.concat(
