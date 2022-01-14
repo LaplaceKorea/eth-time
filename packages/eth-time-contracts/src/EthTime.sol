@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.10;
 
+import {Base64} from "@base64-sol/base64.sol";
 import {ERC721} from "@solmate/tokens/ERC721.sol";
+import {Strings} from "@openzeppelin/utils/Strings.sol";
+
 
 /// @notice ETH-Time NFT contract.
 contract EthTime is ERC721("ETH Time", "ETHT") {
@@ -76,7 +79,19 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
         override
         returns (string memory)
     {
-        return string(bytes.concat("data:application/json;bas64"));
+        string memory tokenId = Strings.toString(id);
+
+        return
+            Base64.encode(
+                bytes.concat(
+                    'data:application/json;bas64,',
+                    '{"name": "ETH Time #',
+                    bytes(tokenId),
+                    '", "description": "TODO", "image": "data:image/svg+xml;base64,',
+                    bytes(_tokenImage(id)),
+                    '"}'
+                )
+            );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -93,5 +108,21 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
     {
         // effects: xor existing value with address bytes content.
         historyAccumulator[id] ^= uint160(to);
+    }
+
+    /// @dev Generate the SVG image for the given NFT.
+    /// @param id the NFT unique id.
+    function _tokenImage(uint256 id)
+        internal
+        view
+        returns (string memory)
+    {
+        return
+            Base64.encode(
+                bytes.concat(
+                    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">',
+                    '</svg>'
+                )
+            );
     }
 }
