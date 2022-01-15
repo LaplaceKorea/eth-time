@@ -4,9 +4,22 @@ import { Interface } from "ethers/lib/utils";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import ETH_TIME_ABI from "../abis/EthTime.json";
 
-const ETH_TIME_ADDRESS = "0x1e6ea115afdd1325c666a44016a0eaa7b3eb62a0";
+const ETH_TIME_ADDRESS = "0x5ef5c7bc55265a400d7bba8dfaedc6146d778919";
 
 const EthTimeInterface = new Interface(ETH_TIME_ABI.abi);
+
+export function useOwnerOf(id: BigNumber | undefined): string | undefined {
+  const [owner] =
+    useContractCall(
+      id && {
+        abi: EthTimeInterface,
+        address: ETH_TIME_ADDRESS,
+        method: "ownerOf",
+        args: [id],
+      }
+    ) ?? [];
+  return owner;
+}
 
 export function useEthTimeBalance(
   user: string | undefined | null
@@ -37,6 +50,15 @@ export function useMint() {
   return useContractFunction(contract, "mint", { transactionName: "Mint" });
 }
 
+export function useTransfer() {
+  const contract = new Contract(ETH_TIME_ADDRESS, EthTimeInterface);
+  return useContractFunction(
+    contract,
+    "safeTransferFrom(address,address,uint256)",
+    { transactionName: "Transfer" }
+  );
+}
+
 interface Metadata {
   name: string;
   description: string;
@@ -62,7 +84,7 @@ export function useMetadata(id: BigNumber | undefined): Metadata | undefined {
         .toString()
         .slice(28);
       const newMeta = JSON.parse(newMetaString);
-      setMeta(newMeta as Metadata)
+      setMeta(newMeta as Metadata);
     }
   }, [response, setMeta]);
 
@@ -180,7 +202,7 @@ function accountTokensReducer(
     }
     // compute initial set of owned tokens
     // keep them sorted by the last block they were used
-    const ownedWithBlock = new Map<BigNumber, number>();
+    const ownedWithBlock = new Map<string, [BigNumber, number]>();
     const account = action.account.toLowerCase();
     const allEvents = [
       ...action.incomingTransfers,
@@ -188,17 +210,19 @@ function accountTokensReducer(
     ].sort((a, b) => a.blockNumber - b.blockNumber);
     allEvents.forEach((event) => {
       const { from, to, id } = event.args;
-      if (to.toLowerCase() == account) {
-        // incoming
-        ownedWithBlock.set(id, event.blockNumber);
-      } else if (from.toLowerCase() == account) {
-        ownedWithBlock.delete(id);
+      if (BigNumber.isBigNumber(id)) {
+        if (to.toLowerCase() == account) {
+          // incoming
+          ownedWithBlock.set(id.toHexString(), [id, event.blockNumber]);
+        } else if (from.toLowerCase() == account) {
+          ownedWithBlock.delete(id.toHexString());
+        }
       }
     });
 
     const owned = [...ownedWithBlock]
-      .sort(([_ida, a], [_idb, b]) => b - a)
-      .map(([id, _b]) => id);
+      .sort(([_ida, [_idbna, a]], [_idb, [_idbnb, b]]) => b - a)
+      .map(([_id, [bn, _b]]) => bn);
 
     return {
       type: "ready",
@@ -206,13 +230,29 @@ function accountTokensReducer(
     };
   } else if (state.type === "ready") {
     if (action.type === "incoming") {
+      if (action.transfer.from == action.transfer.to) {
+        // self transfer, move to front
+        const newOwned = [
+          action.transfer.id,
+          ...state.owned.filter((id) => !id.eq(action.transfer.id)),
+        ];
+        return {
+          ...state,
+          owned: newOwned,
+        };
+      }
+
       const newOwned = [action.transfer.id, ...state.owned];
       return {
         ...state,
         owned: newOwned,
       };
     } else if (action.type == "outgoing") {
-      const newOwned = state.owned.filter((id) => id !== action.transfer.id);
+      if (action.transfer.from == action.transfer.to) {
+        // self transfer
+        return state;
+      }
+      const newOwned = state.owned.filter((id) => !id.eq(action.transfer.id));
       return {
         ...state,
         owned: newOwned,

@@ -3,7 +3,7 @@ pragma solidity 0.8.10;
 
 import {Base64} from "@base64-sol/base64.sol";
 import {BokkyPooBahsDateTimeLibrary} from "@bpb-datetime/BokkyPooBahsDateTimeLibrary.sol";
-import {ERC721} from "@solmate/tokens/ERC721.sol";
+import {ERC721, ERC721TokenReceiver} from "@solmate/tokens/ERC721.sol";
 import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
 import {Strings} from "@openzeppelin/utils/Strings.sol";
 
@@ -30,11 +30,7 @@ contract EthTime is ERC721("ETH Time", "ETHT"), ReentrancyGuard {
         nonReentrant
         override
     {
-        // effects: update history
-        _updateHistory(to, id);
-
-        // effects: transfer token
-        super.transferFrom(from, to, id);
+        _transferFrom(from, to, id);
     }
 
     function safeTransferFrom(address from, address to, uint256 id)
@@ -42,23 +38,31 @@ contract EthTime is ERC721("ETH Time", "ETHT"), ReentrancyGuard {
         nonReentrant
         override
     {
-        // effects: update history
-        _updateHistory(to, id);
+        _transferFrom(from, to, id);
 
-        // interactions: safe transfer token
-        super.safeTransferFrom(from, to, id);
+        // interactions: check destination can handle ERC721
+        require(
+            to.code.length == 0 ||
+                ERC721TokenReceiver(to).onERC721Received(msg.sender, from, id, "") ==
+                ERC721TokenReceiver.onERC721Received.selector,
+            "UNSAFE_RECIPIENT"
+        );
     }
 
-    function safeTransferFrom(address from, address to, uint256 id, bytes memory data)
+    function safeTransferFrom(address from, address to, uint256 id, bytes memory /* data */)
         public
         nonReentrant
         override
     {
-        // effects: update history
-        _updateHistory(to, id);
+        _transferFrom(from, to, id);
 
-        // interactions: safe transfer token
-        super.safeTransferFrom(from, to, id, data);
+        // interactions: check destination can handle ERC721
+        require(
+            to.code.length == 0 ||
+                ERC721TokenReceiver(to).onERC721Received(msg.sender, from, id, "") ==
+                ERC721TokenReceiver.onERC721Received.selector,
+            "UNSAFE_RECIPIENT"
+        );
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -147,6 +151,39 @@ contract EthTime is ERC721("ETH Time", "ETHT"), ReentrancyGuard {
     {
         // effects: xor existing value with address bytes content.
         historyAccumulator[id] ^= uint160(to) << 32;
+    }
+
+    function _transferFrom(address from, address to, uint256 id)
+        internal
+    {
+        // checks: sender and destination
+        require(from == ownerOf[id], "WRONG_FROM");
+        require(to != address(0), "INVALID_RECIPIENT");
+
+        // checks: can transfer
+        require(
+            msg.sender == from || msg.sender == getApproved[id] || isApprovedForAll[from][msg.sender],
+            "NOT_AUTHORIZED"
+        );
+
+        // effects: update balance
+        // Underflow of the sender's balance is impossible because we check for
+        // ownership above and the recipient's balance can't realistically overflow.
+        unchecked {
+            balanceOf[from]--;
+            balanceOf[to]++;
+        }
+
+        // effects: update owership
+        ownerOf[id] = to;
+
+        // effects: reclaim storage
+        delete getApproved[id];
+
+        // effects: update history
+        _updateHistory(to, id);
+
+        emit Transfer(from, to, id);
     }
 
     bytes constant onColor = "FFF";

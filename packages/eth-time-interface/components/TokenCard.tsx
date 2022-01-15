@@ -4,21 +4,22 @@ import { useMetadata } from "../lib/hooks";
 import { styled } from "../stitches.config";
 
 const TokenCardRoot = styled("div", {
-  backgroundColor: "pink",
+  cursor: "pointer",
 });
 
 interface TokenCardProps {
   id: BigNumber;
+  onClick: () => void;
 }
 
-export function TokenCard({ id }: TokenCardProps) {
+export function TokenCard({ id, onClick }: TokenCardProps) {
   const meta = useMetadata(id);
 
   if (!meta) {
     return null;
   }
   return (
-    <TokenCardRoot>
+    <TokenCardRoot onClick={onClick}>
       <img src={meta.image} />
     </TokenCardRoot>
   );
