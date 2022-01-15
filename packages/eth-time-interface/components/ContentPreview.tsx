@@ -15,5 +15,5 @@ export function ContentPreview({ data }: ContentPreviewProps) {
   if (data) {
     return <StyledImg src={data} />;
   }
-  return <div>gm</div>;
+  return <div></div>;
 }

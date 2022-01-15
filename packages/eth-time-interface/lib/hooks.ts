@@ -4,7 +4,8 @@ import { Interface } from "ethers/lib/utils";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import ETH_TIME_ABI from "../abis/EthTime.json";
 
-const ETH_TIME_ADDRESS = "0x5ef5c7bc55265a400d7bba8dfaedc6146d778919";
+
+const ETH_TIME_ADDRESS = "0x8fcbff257e2b977cfc0f79b04210008d0e1e65d3";
 
 const EthTimeInterface = new Interface(ETH_TIME_ABI.abi);
 
@@ -79,10 +80,9 @@ export function useMetadata(id: BigNumber | undefined): Metadata | undefined {
     ) ?? [];
 
   useEffect(() => {
-    if (response) {
-      const newMetaString = Buffer.from(response, "base64")
+    if (response && typeof response == 'string') {
+      const newMetaString = Buffer.from(response.slice(28), "base64")
         .toString()
-        .slice(28);
       const newMeta = JSON.parse(newMetaString);
       setMeta(newMeta as Metadata);
     }

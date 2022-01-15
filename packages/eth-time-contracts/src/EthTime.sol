@@ -108,19 +108,28 @@ contract EthTime is ERC721("ETH Time", "ETHT"), ReentrancyGuard {
 
         string memory tokenId = Strings.toString(id);
 
+        uint256 hour = BokkyPooBahsDateTimeLibrary.getHour(block.timestamp);
+        uint256 minute = BokkyPooBahsDateTimeLibrary.getMinute(block.timestamp);
+
         bytes memory topHue = _computeHue(historyAccumulator[id], id);
         bytes memory bottomHue = _computeHue(uint160(ownerOf[id]), id);
 
         return
-            bytes.concat(
-                'data:application/json;bas64,',
-                Base64.encode(
-                    bytes.concat(
-                        '{"name": "ETH Time #',
-                        bytes(tokenId),
-                        '", "description": "ETH Time", "image": "data:image/svg+xml;base64,',
-                        bytes(_tokenImage(topHue, bottomHue)),
-                        '"}'
+            string(
+                bytes.concat(
+                    'data:application/json;bas64,',
+                    bytes(
+                        Base64.encode(
+                            bytes.concat(
+                                '{"name": "ETH Time #',
+                                bytes(tokenId),
+                                '", "description": "ETH Time", "image": "data:image/svg+xml;base64,',
+                                bytes(_tokenImage(topHue, bottomHue, hour, minute)),
+                                '", "attributes": [{"trait_type": "top_color", "value": "hsl(', topHue, ',100%,89%)"},',
+                                '{"trait_type": "bottom_color", "value": "hsl(', bottomHue, ',77%,36%)"},',
+                                '{"trait_type": "time", "value": "', bytes(Strings.toString(hour)), ':', bytes(Strings.toString(minute)), '"}]}'
+                            )
+                        )
                     )
                 )
             );
@@ -134,9 +143,13 @@ contract EthTime is ERC721("ETH Time", "ETHT"), ReentrancyGuard {
         view
         returns (string memory)
     {
+        uint256 hour = BokkyPooBahsDateTimeLibrary.getHour(block.timestamp);
+        uint256 minute = BokkyPooBahsDateTimeLibrary.getMinute(block.timestamp);
+
         bytes memory topHue = _computeHue(uint160(id), id);
         bytes memory bottomHue = _computeHue(uint160(to), id);
-        return _tokenImage(topHue, bottomHue);
+
+        return _tokenImage(topHue, bottomHue, hour, minute);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -192,13 +205,11 @@ contract EthTime is ERC721("ETH Time", "ETHT"), ReentrancyGuard {
     bytes constant offColor = "333";
 
     /// @dev Generate the SVG image for the given NFT.
-    function _tokenImage(bytes memory topHue, bytes memory bottomHue)
+    function _tokenImage(bytes memory topHue, bytes memory bottomHue, uint256 hour, uint256 minute)
         internal
-        view
+        pure
         returns (string memory)
     {
-        uint256 hour = BokkyPooBahsDateTimeLibrary.getHour(block.timestamp);
-        uint256 minute = BokkyPooBahsDateTimeLibrary.getMinute(block.timestamp);
 
         return
             Base64.encode(
