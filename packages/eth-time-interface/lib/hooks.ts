@@ -60,10 +60,16 @@ export function useTransfer() {
   );
 }
 
+interface Attribute {
+  trait_type: string
+  value: string
+}
+
 interface Metadata {
   name: string;
   description: string;
   image: string;
+  attributes: Attribute[]
 }
 
 export function useMetadata(id: BigNumber | undefined): Metadata | undefined {

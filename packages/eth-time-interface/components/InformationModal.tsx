@@ -116,14 +116,14 @@ const OwnerRoot = styled("div", {
   flexDirection: "row",
   alignItems: "center",
   justifyContent: "flex-start",
-  height: "3rem"
+  height: "3rem",
 });
 
 const AvatarRoot = styled("div", {
   flexGrow: 0,
   flexShrink: 0,
   marginRight: "1rem",
-})
+});
 
 const InfoPar = styled("p", {
   color: theme.colors.darkBlue,
@@ -135,6 +135,27 @@ const InfoPar = styled("p", {
   "@md": {
     fontSize: 24,
   },
+});
+
+const MetadataRoot = styled("div", {
+  display: "grid",
+  alignItems: "center",
+  gridTemplateColumns: "repeat(auto-fill, minmax(10rem, 30%))",
+  gap: "2rem",
+  width: "100%",
+  marginTop: "3rem",
+});
+
+const MetadataBox = styled("div", {
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  alignItems: "center",
+  borderRadius: 5,
+  background: "#E3E3E3",
+  border: "1px solid #BBB",
+  padding: "1rem 2rem",
+  gap: "1rem",
 });
 
 const TransferRow = styled("div", {
@@ -218,6 +239,19 @@ export function InformationModal({ id }: InformationModalProps) {
     return null;
   }, [owner, mainnetProvider]);
 
+  const metadataBoxes = useMemo(() => {
+    const attributes = meta?.attributes ?? [];
+    if (attributes.length === 0) {
+      return [];
+    }
+    return attributes.map((attr) => (
+      <MetadataBox key={attr.trait_type}>
+        <span>{attr.trait_type}</span>
+        <span>{attr.value}</span>
+      </MetadataBox>
+    ));
+  }, [meta]);
+
   useEffect(() => {
     if (state.status === "Success") {
       setDestination("");
@@ -234,11 +268,10 @@ export function InformationModal({ id }: InformationModalProps) {
         <InfoRow>
           <Title>{meta?.name}</Title>
           <OwnerRoot>
-            <AvatarRoot>
-            {avatar}
-            </AvatarRoot>
+            <AvatarRoot>{avatar}</AvatarRoot>
             <InfoPar>{ownerName}</InfoPar>
           </OwnerRoot>
+          <MetadataRoot>{metadataBoxes}</MetadataRoot>
         </InfoRow>
         <TransferRow>
           <TransferInput
