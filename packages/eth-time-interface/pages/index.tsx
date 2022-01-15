@@ -1,6 +1,7 @@
 import { useEthers } from "@usedapp/core";
 import { BigNumber } from "ethers";
 import React, { useCallback, useEffect } from "react";
+import { Notifications } from "../components/Notifications";
 import { TheButton } from "../components/TheButton";
 import {
   useAvailableId,
@@ -26,6 +27,12 @@ const CenteredRow = styled("div", {
 const Title = styled("h1", {
   fontSize: 72,
   textShadow: "6px -6px 0px #FEC750",
+});
+
+const NotificationsRoot = styled("div", {
+  position: "absolute",
+  top: 0,
+  right: 0,
 });
 
 interface ImagePreviewProps {
@@ -69,6 +76,9 @@ export default function IndexPage() {
 
   return (
     <PageRoot>
+      <NotificationsRoot>
+        <Notifications />
+      </NotificationsRoot>
       <HeroRoot>
         <CenteredRow>
           <Title>Ξ Time</Title>

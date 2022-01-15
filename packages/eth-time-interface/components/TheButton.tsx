@@ -1,7 +1,7 @@
 import { ChainId, TransactionStatus, useEthers, getStoredTransactionState } from "@usedapp/core";
 import React, { useCallback } from "react";
 
-import { styled } from "../stitches.config";
+import { styled, theme } from "../stitches.config";
 
 const ButtonRoot = styled("button", {
   padding: "1rem 3rem",
@@ -11,12 +11,12 @@ const ButtonRoot = styled("button", {
   borderRadius: 10,
   backgroundColor: "white",
   border: "1px solid $blue",
-  boxShadow: "15px 15px 0px #FEC750",
+  boxShadow: `15px 15px 0px ${theme.colors.yellow}`,
   cursor: "pointer",
   transition: "125ms",
   transform: "translateY(0)",
   "&:hover": {
-    boxShadow: "10px 10px 0px #FEC750",
+    boxShadow: `10px 10px 0px ${theme.colors.yellow}`,
     transform: "translateY(5px)",
   },
   "&:active": {

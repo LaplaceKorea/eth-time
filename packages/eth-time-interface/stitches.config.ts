@@ -7,7 +7,11 @@ export const { getCssText, globalCss, styled, theme } = createStitches({
     },
     colors: {
         foreground: '#333',
-        blue: '#5568F3'
+        blue: 'hsla(233, 87%, 64%, 1)',
+        yellow: 'hsla(41, 99%, 65%, 1)',
+        orange: 'hsla(36, 87%, 64%, 1)',
+        green: 'hsla(103, 87%, 64%, 1)',
+        red: 'hsla(360, 87%, 64%, 1)',
     }
   },
 });
