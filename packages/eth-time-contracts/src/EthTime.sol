@@ -4,6 +4,7 @@ pragma solidity 0.8.10;
 import {Base64} from "@base64-sol/base64.sol";
 import {BokkyPooBahsDateTimeLibrary} from "@bpb-datetime/BokkyPooBahsDateTimeLibrary.sol";
 import {ERC721} from "@solmate/tokens/ERC721.sol";
+import {ReentrancyGuard} from "@solmate/utils/ReentrancyGuard.sol";
 import {Strings} from "@openzeppelin/utils/Strings.sol";
 
 
@@ -14,7 +15,7 @@ error EthTime__DoesNotExist();
 error EthTime__NumberOutOfRange();
 
 /// @notice ETH-Time NFT contract.
-contract EthTime is ERC721("ETH Time", "ETHT") {
+contract EthTime is ERC721("ETH Time", "ETHT"), ReentrancyGuard {
     //////////////////////////////////////////////////////////////////////////
     //                                                                      //
     //                     Transfer with History                            //
@@ -26,29 +27,38 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
 
     function transferFrom(address from, address to, uint256 id)
         public
+        nonReentrant
         override
     {
-        super.transferFrom(from, to, id);
-
+        // effects: update history
         _updateHistory(to, id);
+
+        // effects: transfer token
+        super.transferFrom(from, to, id);
     }
 
     function safeTransferFrom(address from, address to, uint256 id)
         public
+        nonReentrant
         override
     {
-        super.safeTransferFrom(from, to, id);
-
+        // effects: update history
         _updateHistory(to, id);
+
+        // interactions: safe transfer token
+        super.safeTransferFrom(from, to, id);
     }
 
     function safeTransferFrom(address from, address to, uint256 id, bytes memory data)
         public
+        nonReentrant
         override
     {
-        super.safeTransferFrom(from, to, id, data);
-
+        // effects: update history
         _updateHistory(to, id);
+
+        // interactions: safe transfer token
+        super.safeTransferFrom(from, to, id, data);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -63,12 +73,14 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
     /// @param id the NFT unique id.
     function mint(address to, uint256 id)
         public
+        nonReentrant
         virtual
     {
-        _safeMint(to, id);
-
         // effects: seed history with unique starting value.
         historyAccumulator[id] = uint160(id);
+
+        // interactions: safe mint
+        _safeMint(to, id);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -86,7 +98,14 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
         override
         returns (string memory)
     {
+        if (ownerOf[id] == address(0)) {
+            revert EthTime__DoesNotExist();
+        }
+
         string memory tokenId = Strings.toString(id);
+
+        bytes memory topHue = _computeHue(historyAccumulator[id], id);
+        bytes memory bottomHue = _computeHue(uint160(ownerOf[id]), id);
 
         return
             Base64.encode(
@@ -95,10 +114,23 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
                     '{"name": "ETH Time #',
                     bytes(tokenId),
                     '", "description": ETH Time", "image": "data:image/svg+xml;base64,',
-                    bytes(_tokenImage(id)),
+                    bytes(_tokenImage(topHue, bottomHue)),
                     '"}'
                 )
             );
+    }
+
+    /// @dev Generate a preview of the token that will be minted.
+    /// @param to the minter.
+    /// @param id the NFT unique id.
+    function tokenImagePreview(address to, uint256 id)
+        public
+        view
+        returns (string memory)
+    {
+        bytes memory topHue = _computeHue(uint160(id), id);
+        bytes memory bottomHue = _computeHue(uint160(to), id);
+        return _tokenImage(topHue, bottomHue);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -121,21 +153,13 @@ contract EthTime is ERC721("ETH Time", "ETHT") {
     bytes constant offColor = "333";
 
     /// @dev Generate the SVG image for the given NFT.
-    /// @param id the NFT unique id.
-    function _tokenImage(uint256 id)
+    function _tokenImage(bytes memory topHue, bytes memory bottomHue)
         internal
         view
         returns (string memory)
     {
-        if (ownerOf[id] == address(0)) {
-            revert EthTime__DoesNotExist();
-        }
-
         uint256 hour = BokkyPooBahsDateTimeLibrary.getHour(block.timestamp);
         uint256 minute = BokkyPooBahsDateTimeLibrary.getMinute(block.timestamp);
-
-        bytes memory topHue = _computeHue(historyAccumulator[id], id);
-        bytes memory bottomHue = _computeHue(uint160(ownerOf[id]), id);
 
         return
             Base64.encode(
