@@ -112,14 +112,16 @@ contract EthTime is ERC721("ETH Time", "ETHT"), ReentrancyGuard {
         bytes memory bottomHue = _computeHue(uint160(ownerOf[id]), id);
 
         return
-            Base64.encode(
-                bytes.concat(
-                    'data:application/json;bas64,',
-                    '{"name": "ETH Time #',
-                    bytes(tokenId),
-                    '", "description": "ETH Time", "image": "data:image/svg+xml;base64,',
-                    bytes(_tokenImage(topHue, bottomHue)),
-                    '"}'
+            bytes.concat(
+                'data:application/json;bas64,',
+                Base64.encode(
+                    bytes.concat(
+                        '{"name": "ETH Time #',
+                        bytes(tokenId),
+                        '", "description": "ETH Time", "image": "data:image/svg+xml;base64,',
+                        bytes(_tokenImage(topHue, bottomHue)),
+                        '"}'
+                    )
                 )
             );
     }
