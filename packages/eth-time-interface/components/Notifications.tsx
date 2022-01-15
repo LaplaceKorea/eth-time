@@ -15,6 +15,7 @@ const NotificationBubbleRoot = styled("div", {
   borderRadius: "5px",
   padding: "1rem 3rem",
   cursor: "pointer",
+  background: "white",
   variants: {
     notificationType: {
       walletConnected: {

@@ -1,4 +1,11 @@
 import React from "react";
+import { styled } from '../stitches.config'
+
+const StyledImg = styled('img', {
+    objectFit: "contain",
+    width: "100%",
+    height: "100%",
+})
 
 interface ContentPreviewProps {
   data?: string;
@@ -6,7 +13,7 @@ interface ContentPreviewProps {
 
 export function ContentPreview({ data }: ContentPreviewProps) {
   if (data) {
-    return <img src={data} />;
+    return <StyledImg src={data} />;
   }
   return <div>gm</div>;
 }

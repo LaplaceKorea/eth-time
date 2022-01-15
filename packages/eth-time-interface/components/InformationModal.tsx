@@ -38,7 +38,8 @@ const Content = styled(Dialog.Content, {
   transform: "translate(-50%, -50%)",
   width: "90vw",
   maxWidth: "100rem",
-  maxHeight: "85vh",
+  height: "85vh",
+  maxHeight: "80rem",
   padding: "4rem",
   "@media (prefers-reduced-motion: no-preference)": {
     animation: `${contentShow} 150ms cubic-bezier(0.16, 1, 0.3, 1)`,
@@ -47,25 +48,70 @@ const Content = styled(Dialog.Content, {
 });
 
 const InformationModalRoot = styled("div", {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
+  display: "flex",
+  justifyContent: "space-between",
   alignItems: "center",
+  height: "100%",
+  width: "100%",
 });
 
 const PreviewRoot = styled("div", {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
   width: "50%",
+  height: "100%",
+  position: "relative",
+});
+
+const DataRoot = styled("div", {
+  width: "50%",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+});
+
+const Title = styled("h3", {
+  color: theme.colors.darkBlue,
+  fontSize: 64,
+  margin: 0,
+  overflow: "hidden",
+  lineHeight: 1,
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+});
+
+const InfoRow = styled("div", {
+  display: "flex",
+  flexDirection: "column",
+  width: "100%",
+});
+
+const InfoPar = styled("p", {
+  color: theme.colors.darkBlue,
+  fontSize: 24,
+  overflow: "hidden",
+  lineHeight: 1,
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 });
 
 const TransferRow = styled("div", {
   display: "flex",
   flexDirection: "row",
   gap: "2rem",
+  width: "100%",
+  justifyContent: "space-between",
 });
 
 const TransferInput = styled("input", {
   padding: "1rem 0.5rem",
+  fontSize: 24,
   borderRadius: "10px",
   color: theme.colors.blue,
+  flexGrow: 1,
   border: `1px solid ${theme.colors.foreground}`,
   boxShadow: `5px 5px 0px ${theme.colors.yellow}`,
   "&:focus": {
@@ -75,6 +121,8 @@ const TransferInput = styled("input", {
 });
 
 const TransferButton = styled("button", {
+  fontSize: 24,
+  background: "white",
   padding: "1rem 0.5rem",
   borderRadius: "10px",
   border: `1px solid ${theme.colors.blue}`,
@@ -89,7 +137,7 @@ const TransferButton = styled("button", {
     transform: "translateY(2px)",
   },
   "&:focus": {
-      outline: 'none'
+    outline: "none",
   },
   "&:active": {
     boxShadow: `0px 0px 0px ${theme.colors.yellow}`,
@@ -107,7 +155,7 @@ export function InformationModal({ id }: InformationModalProps) {
   const meta = useMetadata(id);
   const owner = useOwnerOf(id);
 
-  const [destination, setDestination] = useState('');
+  const [destination, setDestination] = useState("");
 
   const { state, resetState, send } = useTransfer();
 
@@ -122,9 +170,11 @@ export function InformationModal({ id }: InformationModalProps) {
       <PreviewRoot>
         <ContentPreview data={meta?.image} />
       </PreviewRoot>
-      <div>
-        <h2>{meta?.name}</h2>
-        <p>Owner: {owner}</p>
+      <DataRoot>
+        <InfoRow>
+          <Title>{meta?.name}</Title>
+          <InfoPar>Owner: {owner}</InfoPar>
+        </InfoRow>
         <TransferRow>
           <TransferInput
             placeholder="Transfer to"
@@ -135,7 +185,7 @@ export function InformationModal({ id }: InformationModalProps) {
             Transfer
           </TransferButton>
         </TransferRow>
-      </div>
+      </DataRoot>
     </InformationModalRoot>
   );
 }

@@ -1,6 +1,6 @@
 import { useEthers } from "@usedapp/core";
 import { BigNumber, ethers } from "ethers";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ContentPreview } from "../components/ContentPreview";
 import { InformationModal } from "../components/InformationModal";
 import { Notifications } from "../components/Notifications";
@@ -10,27 +10,72 @@ import {
   useAccountCollection,
   useAvailableId,
   useEthTimeImagePreview,
+  useMetadata,
   useMint,
 } from "../lib/hooks";
-import { styled } from "../stitches.config";
+import { styled, theme } from "../stitches.config";
 
 const PageRoot = styled("div", {});
 
 const HeroRoot = styled("div", {
-  display: "grid",
-  gridTemplateRows: "auto 600px auto",
-  height: "95vh",
+  display: "flex",
+  flexDirection: "column",
+  height: "90vh",
 });
 
 const CenteredRow = styled("div", {
   display: "flex",
   justifyContent: "center",
+  padding: "2rem 0",
+});
+
+const TitleRoot = styled(CenteredRow, {
+  alignItems: "center",
+  flexDirection: "column",
+});
+
+const ImagePreviewRoot = styled(CenteredRow, {
+  flexGrow: 1,
+  overflow: "hidden",
 });
 
 const Title = styled("h1", {
   fontSize: 72,
   textShadow: "6px -6px 0px #FEC750",
+  margin: 0,
 });
+
+const MyCollectionTitle = styled("h2", {
+  fontSize: 48,
+  color: theme.colors.blue,
+  textShadow: `20px 20px 0px ${theme.colors.yellow}`,
+  margin: "0 auto",
+  width: "100%",
+  maxWidth: "100rem"
+});
+
+const SectionDivider = styled("div", {
+  width: "100%",
+  height: "4rem",
+  marginTop: "3rem",
+  background: 'url("/images/eth-time-1.png")',
+  backgroundRepeat: "repeat-x",
+  variants: {
+    pattern: {
+      0: {
+        backgroundImage: 'url("/images/eth-time-0.png")',
+      },
+      1: {
+        backgroundImage: 'url("/images/eth-time-1.png")',
+      },
+    },
+  },
+});
+
+const Spacer = styled("div", {
+  width: "100%",
+  height: "8rem",
+})
 
 const CollectionRoot = styled("div", {
   maxWidth: "100rem",
@@ -53,9 +98,9 @@ interface ImagePreviewProps {
 }
 
 function ImagePreview({ account, id }: ImagePreviewProps) {
-  const nonnulAccount = ethers.constants.AddressZero
+  const nonnulAccount = ethers.constants.AddressZero;
   const imagePreview = useEthTimeImagePreview(nonnulAccount, id);
-  return <ContentPreview data={imagePreview} />
+  return <ContentPreview data={imagePreview} />;
 }
 
 export default function IndexPage() {
@@ -86,39 +131,59 @@ export default function IndexPage() {
     }
   }, [state.status, resetState]);
 
+  const collectionContent = useMemo(() => {
+    if (userCollection.length == 0) {
+      return <Spacer />;
+    }
+
+    return (
+      <React.Fragment>
+        <CenteredRow>
+          <MyCollectionTitle>My Collection</MyCollectionTitle>
+        </CenteredRow>
+        <CollectionRoot>
+          {userCollection.map((id) => (
+            <TokenCard
+              key={id.toHexString()}
+              id={id}
+              onClick={() => setCurrentId(id)}
+            />
+          ))}
+        </CollectionRoot>
+        <InformationModal.Root
+          open={!!currentId}
+          onOpenChange={() => setCurrentId(undefined)}
+        >
+          <InformationModal.Portal>
+            <InformationModal.Overlay />
+            <InformationModal.Content>
+              {currentId && <InformationModal id={currentId} />}
+            </InformationModal.Content>
+          </InformationModal.Portal>
+        </InformationModal.Root>
+      </React.Fragment>
+    );
+  }, [currentId, setCurrentId, userCollection]);
+
   return (
     <PageRoot>
       <NotificationsRoot>
         <Notifications />
       </NotificationsRoot>
       <HeroRoot>
-        <CenteredRow>
+        <TitleRoot>
           <Title>Ξ Time</Title>
-        </CenteredRow>
-        <CenteredRow>
+          <SectionDivider pattern={0} />
+        </TitleRoot>
+        <ImagePreviewRoot>
           <ImagePreview account={account} id={id} />
-        </CenteredRow>
+        </ImagePreviewRoot>
         <CenteredRow>
           <TheButton onClick={mint} transactionStatus={state} />
         </CenteredRow>
       </HeroRoot>
-      <CollectionRoot>
-        {userCollection.map((id) => (
-          <TokenCard
-            key={id.toHexString()}
-            id={id}
-            onClick={() => setCurrentId(id)}
-          />
-        ))}
-      </CollectionRoot>
-      <InformationModal.Root open={!!currentId} onOpenChange={() => setCurrentId(undefined)}>
-        <InformationModal.Portal>
-          <InformationModal.Overlay />
-          <InformationModal.Content>
-            {currentId && <InformationModal id={currentId} />}
-          </InformationModal.Content>
-        </InformationModal.Portal>
-      </InformationModal.Root>
+      <SectionDivider pattern={1} />
+      {collectionContent}
     </PageRoot>
   );
 }
