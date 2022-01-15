@@ -10,12 +10,13 @@ import {
   useAccountCollection,
   useAvailableId,
   useEthTimeImagePreview,
-  useMetadata,
   useMint,
 } from "../lib/hooks";
 import { styled, theme } from "../stitches.config";
 
-const PageRoot = styled("div", {});
+const PageRoot = styled("div", {
+  backgroundImage: "url('/images/pattern.png')"
+});
 
 const HeroRoot = styled("div", {
   display: "flex",
@@ -32,6 +33,7 @@ const CenteredRow = styled("div", {
 const TitleRoot = styled(CenteredRow, {
   alignItems: "center",
   flexDirection: "column",
+  background: "white"
 });
 
 const ImagePreviewRoot = styled(CenteredRow, {
