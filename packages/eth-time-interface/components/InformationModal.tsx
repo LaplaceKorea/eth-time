@@ -1,10 +1,11 @@
 import { BigNumber } from "ethers";
 import * as Dialog from "@radix-ui/react-dialog";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { styled, keyframes, theme } from "../stitches.config";
 import { useMetadata, useOwnerOf, useTransfer } from "../lib/hooks";
 import { ContentPreview } from "./ContentPreview";
 import { useEthers } from "@usedapp/core";
+import { useEnsName, useResolveAddress } from "../lib/web3";
 
 const overlayShow = keyframes({
   "0%": { opacity: 0 },
@@ -181,15 +182,25 @@ export function InformationModal({ id }: InformationModalProps) {
   const meta = useMetadata(id);
   const owner = useOwnerOf(id);
 
+  const ownerName = useEnsName(owner)
+
   const [destination, setDestination] = useState("");
+  const destinationAddress = useResolveAddress(destination)
 
   const { state, resetState, send } = useTransfer();
 
   const transfer = useCallback(() => {
-    if (account && destination) {
-      send(account, destination, id);
+    if (account && destinationAddress) {
+      send(account, destinationAddress, id);
     }
-  }, [account, destination, id]);
+  }, [account, destination, destinationAddress, id]);
+
+  useEffect(() => {
+    if (state.status === 'Success') {
+      setDestination('')
+      resetState()
+    }
+  }, [state, setDestination, resetState])
 
   return (
     <InformationModalRoot>
@@ -199,7 +210,7 @@ export function InformationModal({ id }: InformationModalProps) {
       <DataRoot>
         <InfoRow>
           <Title>{meta?.name}</Title>
-          <InfoPar>Owner: {owner}</InfoPar>
+          <InfoPar>Owner: {ownerName}</InfoPar>
         </InfoRow>
         <TransferRow>
           <TransferInput
@@ -207,7 +218,7 @@ export function InformationModal({ id }: InformationModalProps) {
             onChange={(evt) => setDestination(evt.target.value)}
             value={destination}
           />
-          <TransferButton disabled={!account} onClick={transfer}>
+          <TransferButton disabled={!account || !destinationAddress} onClick={transfer}>
             Transfer
           </TransferButton>
         </TransferRow>

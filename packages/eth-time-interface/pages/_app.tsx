@@ -2,8 +2,7 @@ import { AppProps } from "next/app";
 import React from "react";
 import { DAppProvider, Config, ChainId } from "@usedapp/core";
 import { globalCss } from "../stitches.config";
-
-const INFURA_API_KEY = process.env.NEXT_PUBLIC_INFURA_API_KEY ?? ''
+import { INFURA_API_KEY } from "../lib/web3";
 
 const globalStyles = globalCss({
   "*": {
