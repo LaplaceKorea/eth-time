@@ -81,7 +81,7 @@ contract EthTime is ERC721("ETH Time", "ETHT"), ReentrancyGuard {
         virtual
     {
         // effects: seed history with unique starting value.
-        historyAccumulator[id] = uint160(id);
+        historyAccumulator[id] = uint160(id >> 4);
 
         // interactions: safe mint
         _safeMint(to, id);
@@ -146,7 +146,7 @@ contract EthTime is ERC721("ETH Time", "ETHT"), ReentrancyGuard {
         uint256 hour = BokkyPooBahsDateTimeLibrary.getHour(block.timestamp);
         uint256 minute = BokkyPooBahsDateTimeLibrary.getMinute(block.timestamp);
 
-        bytes memory topHue = _computeHue(uint160(id), id);
+        bytes memory topHue = _computeHue(uint160(id >> 4), id);
         bytes memory bottomHue = _computeHue(uint160(to), id);
 
         return _tokenImage(topHue, bottomHue, hour, minute);
@@ -165,7 +165,7 @@ contract EthTime is ERC721("ETH Time", "ETHT"), ReentrancyGuard {
         internal
     {
         // effects: xor existing value with address bytes content.
-        historyAccumulator[id] ^= uint160(to) << 32;
+        historyAccumulator[id] ^= uint160(to) << 2;
     }
 
     function _transferFrom(address from, address to, uint256 id)
@@ -304,16 +304,8 @@ contract EthTime is ERC721("ETH Time", "ETHT"), ReentrancyGuard {
         pure
         returns (bytes memory)
     {
-        bytes20 b = bytes20(n ^ uint160(id));
-        uint16 acc = 0;
-        unchecked {
-            uint16 t;
-            for (uint8 i = 0; i < 10; i++) {
-                t = uint16(bytes2(b[2*i]) | (bytes2(b[2*i+1]) << 8));
-                acc ^= t;
-            }
-        }
-        acc = acc % 360;
+        uint160 t = n ^ uint160(id);
+        uint160 acc = t % 360;
         return bytes(Strings.toString(acc));
     }
 }

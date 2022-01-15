@@ -1,5 +1,6 @@
 import { useEthers } from "@usedapp/core";
 import { BigNumber, ethers } from "ethers";
+import { NextSeo } from "next-seo";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ContentPreview } from "../components/ContentPreview";
 import { InformationModal } from "../components/InformationModal";
@@ -33,7 +34,8 @@ const CenteredRow = styled("div", {
 const TitleRoot = styled(CenteredRow, {
   alignItems: "center",
   flexDirection: "column",
-  background: "white"
+  background: "white",
+  paddingBottom: 0
 });
 
 const ImagePreviewRoot = styled(CenteredRow, {
@@ -89,9 +91,10 @@ const CollectionRoot = styled("div", {
 });
 
 const NotificationsRoot = styled("div", {
-  position: "absolute",
+  position: "fixed",
   top: 0,
   right: 0,
+  zIndex: 100,
 });
 
 interface ImagePreviewProps {
@@ -100,7 +103,7 @@ interface ImagePreviewProps {
 }
 
 function ImagePreview({ account, id }: ImagePreviewProps) {
-  const nonnulAccount = ethers.constants.AddressZero;
+  const nonnulAccount = account ?? ethers.constants.AddressZero;
   const imagePreview = useEthTimeImagePreview(nonnulAccount, id);
   return <ContentPreview data={imagePreview} />;
 }
@@ -169,6 +172,7 @@ export default function IndexPage() {
 
   return (
     <PageRoot>
+      <NextSeo title="ETH Time" />
       <NotificationsRoot>
         <Notifications />
       </NotificationsRoot>
