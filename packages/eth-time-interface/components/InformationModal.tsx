@@ -1,11 +1,12 @@
 import { BigNumber } from "ethers";
 import * as Dialog from "@radix-ui/react-dialog";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { styled, keyframes, theme } from "../stitches.config";
 import { useMetadata, useOwnerOf, useTransfer } from "../lib/hooks";
 import { ContentPreview } from "./ContentPreview";
 import { useEthers } from "@usedapp/core";
-import { useEnsName, useResolveAddress } from "../lib/web3";
+import { useEnsName, useMainnetProvider, useResolveAddress } from "../lib/web3";
+import Davatar from "@davatar/react";
 
 const overlayShow = keyframes({
   "0%": { opacity: 0 },
@@ -110,6 +111,20 @@ const InfoRow = styled("div", {
   width: "100%",
 });
 
+const OwnerRoot = styled("div", {
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  height: "3rem"
+});
+
+const AvatarRoot = styled("div", {
+  flexGrow: 0,
+  flexShrink: 0,
+  marginRight: "1rem",
+})
+
 const InfoPar = styled("p", {
   color: theme.colors.darkBlue,
   fontSize: 18,
@@ -181,11 +196,12 @@ export function InformationModal({ id }: InformationModalProps) {
 
   const meta = useMetadata(id);
   const owner = useOwnerOf(id);
+  const mainnetProvider = useMainnetProvider();
 
-  const ownerName = useEnsName(owner)
+  const ownerName = useEnsName(owner);
 
   const [destination, setDestination] = useState("");
-  const destinationAddress = useResolveAddress(destination)
+  const destinationAddress = useResolveAddress(destination);
 
   const { state, resetState, send } = useTransfer();
 
@@ -195,12 +211,19 @@ export function InformationModal({ id }: InformationModalProps) {
     }
   }, [account, destination, destinationAddress, id]);
 
-  useEffect(() => {
-    if (state.status === 'Success') {
-      setDestination('')
-      resetState()
+  const avatar = useMemo(() => {
+    if (owner) {
+      return <Davatar size={32} address={owner} provider={mainnetProvider} />;
     }
-  }, [state, setDestination, resetState])
+    return null;
+  }, [owner, mainnetProvider]);
+
+  useEffect(() => {
+    if (state.status === "Success") {
+      setDestination("");
+      resetState();
+    }
+  }, [state, setDestination, resetState]);
 
   return (
     <InformationModalRoot>
@@ -210,7 +233,12 @@ export function InformationModal({ id }: InformationModalProps) {
       <DataRoot>
         <InfoRow>
           <Title>{meta?.name}</Title>
-          <InfoPar>Owner: {ownerName}</InfoPar>
+          <OwnerRoot>
+            <AvatarRoot>
+            {avatar}
+            </AvatarRoot>
+            <InfoPar>{ownerName}</InfoPar>
+          </OwnerRoot>
         </InfoRow>
         <TransferRow>
           <TransferInput
@@ -218,7 +246,10 @@ export function InformationModal({ id }: InformationModalProps) {
             onChange={(evt) => setDestination(evt.target.value)}
             value={destination}
           />
-          <TransferButton disabled={!account || !destinationAddress} onClick={transfer}>
+          <TransferButton
+            disabled={!account || !destinationAddress}
+            onClick={transfer}
+          >
             Transfer
           </TransferButton>
         </TransferRow>
