@@ -1,2 +1,8 @@
 packages/eth-time-contracts/out
 .env.*
+node_modules
+.pnp
+.pnp.js
+build
+out
+.next
