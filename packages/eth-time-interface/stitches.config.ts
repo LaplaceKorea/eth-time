@@ -15,10 +15,10 @@ export const { getCssText, globalCss, keyframes, styled, theme } =
         green: "hsla(103, 87%, 64%, 1)",
         red: "hsla(360, 87%, 64%, 1)",
       },
-      media: {
-        sm: "(min-width: 640px)",
-        md: "(min-width: 768px)",
-        lg: "(min-width: 1024px)",
-      },
+    },
+    media: {
+      sm: "(min-width: 640px)",
+      md: "(min-width: 768px)",
+      lg: "(min-width: 1024px)",
     },
   });

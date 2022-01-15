@@ -40,11 +40,14 @@ const Content = styled(Dialog.Content, {
   maxWidth: "100rem",
   height: "85vh",
   maxHeight: "80rem",
-  padding: "4rem",
+  padding: "2rem",
   "@media (prefers-reduced-motion: no-preference)": {
     animation: `${contentShow} 150ms cubic-bezier(0.16, 1, 0.3, 1)`,
   },
   "&:focus": { outline: "none" },
+  "@md": {
+    padding: "4rem",
+  },
 });
 
 const InformationModalRoot = styled("div", {
@@ -52,35 +55,52 @@ const InformationModalRoot = styled("div", {
   justifyContent: "space-between",
   alignItems: "center",
   height: "100%",
+  flexDirection: "column",
   width: "100%",
+  "@md": {
+    flexDirection: "row",
+  },
 });
 
 const PreviewRoot = styled("div", {
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
-  width: "50%",
+  width: "100%",
   height: "100%",
   position: "relative",
+  "@md": {
+    width: "50%",
+  },
 });
 
 const DataRoot = styled("div", {
-  width: "50%",
+  width: "100%",
   height: "100%",
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
   alignItems: "flex-start",
+  paddingTop: "2rem",
+  paddingLeft: "0",
+  "@md": {
+    width: "50%",
+    paddingTop: "0",
+    paddingLeft: "2rem",
+  },
 });
 
 const Title = styled("h3", {
   color: theme.colors.darkBlue,
-  fontSize: 64,
+  fontSize: 38,
   margin: 0,
   overflow: "hidden",
   lineHeight: 1,
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+  "@md": {
+    fontSize: 64,
+  },
 });
 
 const InfoRow = styled("div", {
@@ -91,19 +111,25 @@ const InfoRow = styled("div", {
 
 const InfoPar = styled("p", {
   color: theme.colors.darkBlue,
-  fontSize: 24,
+  fontSize: 18,
   overflow: "hidden",
   lineHeight: 1,
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+  "@md": {
+    fontSize: 24,
+  },
 });
 
 const TransferRow = styled("div", {
   display: "flex",
-  flexDirection: "row",
+  flexDirection: "column",
   gap: "2rem",
   width: "100%",
   justifyContent: "space-between",
+  "@lg": {
+    flexDirection: "row",
+  },
 });
 
 const TransferInput = styled("input", {
