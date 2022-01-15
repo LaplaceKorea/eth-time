@@ -3,7 +3,9 @@ import { BigNumber } from "ethers";
 import React, { useCallback, useEffect } from "react";
 import { Notifications } from "../components/Notifications";
 import { TheButton } from "../components/TheButton";
+import { TokenCard } from "../components/TokenCard";
 import {
+  useAccountCollection,
   useAvailableId,
   useEthTimeBalance,
   useEthTimeImagePreview,
@@ -29,6 +31,15 @@ const Title = styled("h1", {
   textShadow: "6px -6px 0px #FEC750",
 });
 
+const CollectionRoot = styled('div', {
+  maxWidth: '100rem',
+  margin: '4rem auto',
+  display: 'grid',
+  justifyContent: 'center',
+  gridTemplateColumns: 'repeat(auto-fill, 20rem)',
+  gap: '4rem',
+})
+
 const NotificationsRoot = styled("div", {
   position: "absolute",
   top: 0,
@@ -51,7 +62,7 @@ function ImagePreview({ account, id }: ImagePreviewProps) {
 export default function IndexPage() {
   const { account } = useEthers();
 
-  const ethTimeBalance = useEthTimeBalance(account);
+  const userCollection = useAccountCollection(account);
 
   const { state, resetState, send } = useMint();
   const id = useAvailableId();
@@ -90,8 +101,11 @@ export default function IndexPage() {
           <TheButton onClick={mint} transactionStatus={state} />
         </CenteredRow>
       </HeroRoot>
-      {ethTimeBalance?.toString() ?? "CALLING"}
-      {state.status}
+      <CollectionRoot>
+      {userCollection.map((id) => (
+        <TokenCard key={id.toHexString()} id={id} />
+      ))}
+      </CollectionRoot>
     </PageRoot>
   );
 }

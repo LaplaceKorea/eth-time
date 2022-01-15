@@ -9,7 +9,6 @@ set contractPath "src/EthTime.sol"
 
 ::setupEnv $network
 
-puts [exec seth balance $::env(ETH_FROM)]
 set contractPattern ".contracts\[\"$contractPath\"\].$contractName"
 set abi [exec jq -r "$contractPattern.abi" out/dapp.sol.json]
 set sig [exec echo $abi | seth --abi-constructor]

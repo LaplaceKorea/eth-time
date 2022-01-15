@@ -17,7 +17,6 @@ proc ::rpcUrl {network} {
 proc ::setupEnv {network} {
     set rpcUrl [::rpcUrl $network] 
     set ::env(ETH_RPC_URL) $rpcUrl
-    puts $rpcUrl
 
     if [info exists ::env(ETH_FROM)] {
         set ethFrom $::env(ETH_FROM)

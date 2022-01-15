@@ -1,10 +1,10 @@
-import { useContractCall, useContractFunction } from "@usedapp/core";
-import { BigNumber, Contract, ethers } from "ethers";
+import { useContractCall, useContractFunction, useEthers } from "@usedapp/core";
+import { BigNumber, Contract, ethers, Event } from "ethers";
 import { Interface } from "ethers/lib/utils";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import ETH_TIME_ABI from "../abis/EthTime.json";
 
-const ETH_TIME_ADDRESS = "0x4573f780c4cfba802f51e9edc37c7adc05154218";
+const ETH_TIME_ADDRESS = "0x1e6ea115afdd1325c666a44016a0eaa7b3eb62a0";
 
 const EthTimeInterface = new Interface(ETH_TIME_ABI.abi);
 
@@ -37,6 +37,38 @@ export function useMint() {
   return useContractFunction(contract, "mint", { transactionName: "Mint" });
 }
 
+interface Metadata {
+  name: string;
+  description: string;
+  image: string;
+}
+
+export function useMetadata(id: BigNumber | undefined): Metadata | undefined {
+  const [meta, setMeta] = useState(undefined);
+
+  const [response] =
+    useContractCall(
+      id && {
+        abi: EthTimeInterface,
+        address: ETH_TIME_ADDRESS,
+        method: "tokenURI",
+        args: [id],
+      }
+    ) ?? [];
+
+  useEffect(() => {
+    if (response) {
+      const newMetaString = Buffer.from(response, "base64")
+        .toString()
+        .slice(28);
+      const newMeta = JSON.parse(newMetaString);
+      setMeta(newMeta as Metadata)
+    }
+  }, [response, setMeta]);
+
+  return meta;
+}
+
 export function useEthTimeImagePreview(
   user: string | undefined,
   id: BigNumber | undefined
@@ -65,16 +97,15 @@ export function useEthTimeImagePreview(
 
 // pick random ids until one of them is available
 export function useAvailableId(): BigNumber | undefined {
-
   const [id, setId] = useState(undefined);
 
   const randomBigNumber = useCallback(() => {
     const bytes = ethers.utils.randomBytes(32);
-    return ethers.BigNumber.from(bytes)
-  }, [])
+    return ethers.BigNumber.from(bytes);
+  }, []);
 
   const [candidateId, setCandidateId] = useState(() => {
-      return randomBigNumber()
+    return randomBigNumber();
   });
 
   const [owner] =
@@ -89,9 +120,174 @@ export function useAvailableId(): BigNumber | undefined {
     if (owner === ethers.constants.AddressZero) {
       setId(candidateId);
     } else {
-        setCandidateId(randomBigNumber())
+      setCandidateId(randomBigNumber());
     }
   }, [owner, setId, randomBigNumber]);
 
   return id;
+}
+
+interface TokenTransfer {
+  from: string;
+  to: string;
+  id: BigNumber;
+}
+
+interface AccountTokensInitializing {
+  type: "initializing";
+  buffer: TokenTransfer[];
+}
+
+interface AccountTokensReady {
+  type: "ready";
+  owned: BigNumber[];
+}
+
+type AccountTokensState = AccountTokensInitializing | AccountTokensReady;
+
+interface AccountTokensIncomingTransfer {
+  type: "incoming";
+  transfer: TokenTransfer;
+}
+
+interface AccountTokensOutgoingTransfer {
+  type: "outgoing";
+  transfer: TokenTransfer;
+}
+
+interface AccountTokensInitialize {
+  type: "initialize";
+  account: string;
+  incomingTransfers: Event[];
+  outgoingTransfers: Event[];
+}
+
+type AccountTokensAction =
+  | AccountTokensIncomingTransfer
+  | AccountTokensOutgoingTransfer
+  | AccountTokensInitialize;
+
+function accountTokensReducer(
+  state: AccountTokensState,
+  action: AccountTokensAction
+): AccountTokensState {
+  if (state.type === "initializing") {
+    if (action.type === "incoming" || action.type === "outgoing") {
+      return {
+        ...state,
+        buffer: [...state.buffer, action.transfer],
+      };
+    }
+    // compute initial set of owned tokens
+    // keep them sorted by the last block they were used
+    const ownedWithBlock = new Map<BigNumber, number>();
+    const account = action.account.toLowerCase();
+    const allEvents = [
+      ...action.incomingTransfers,
+      ...action.outgoingTransfers,
+    ].sort((a, b) => a.blockNumber - b.blockNumber);
+    allEvents.forEach((event) => {
+      const { from, to, id } = event.args;
+      if (to.toLowerCase() == account) {
+        // incoming
+        ownedWithBlock.set(id, event.blockNumber);
+      } else if (from.toLowerCase() == account) {
+        ownedWithBlock.delete(id);
+      }
+    });
+
+    const owned = [...ownedWithBlock]
+      .sort(([_ida, a], [_idb, b]) => b - a)
+      .map(([id, _b]) => id);
+
+    return {
+      type: "ready",
+      owned,
+    };
+  } else if (state.type === "ready") {
+    if (action.type === "incoming") {
+      const newOwned = [action.transfer.id, ...state.owned];
+      return {
+        ...state,
+        owned: newOwned,
+      };
+    } else if (action.type == "outgoing") {
+      const newOwned = state.owned.filter((id) => id !== action.transfer.id);
+      return {
+        ...state,
+        owned: newOwned,
+      };
+    }
+  }
+  return state;
+}
+
+// keep track of nfts owned by user by listening to events
+export function useAccountCollection(account: string | undefined) {
+  const { library } = useEthers();
+  const [state, dispatch] = useReducer(accountTokensReducer, {
+    type: "initializing",
+    buffer: [],
+  });
+
+  const onIncomingTransfer = useCallback(
+    (from: string, to: string, id: BigNumber) => {
+      const transfer = { from, to, id };
+      dispatch({ type: "incoming", transfer });
+    },
+    [dispatch]
+  );
+
+  const onOutgoingTransfer = useCallback(
+    (from: string, to: string, id: BigNumber) => {
+      const transfer = { from, to, id };
+      dispatch({ type: "outgoing", transfer });
+    },
+    [dispatch]
+  );
+
+  const contract = useMemo(() => {
+    if (library) {
+      const contract = new Contract(ETH_TIME_ADDRESS, EthTimeInterface);
+      return contract.connect(library);
+    }
+    return null;
+  }, [library]);
+
+  // initialize state and subscribe to events
+  useEffect(() => {
+    const initializeCollection = async () => {
+      if (!account || !contract) {
+        return;
+      }
+      const incomingTransferFilter = contract.filters.Transfer(null, account);
+      const outgoingTransferFilter = contract.filters.Transfer(account, null);
+      const incomingTransfers = await contract.queryFilter(
+        incomingTransferFilter
+      );
+      const outgoingTransfers = await contract.queryFilter(
+        outgoingTransferFilter
+      );
+      dispatch({
+        type: "initialize",
+        account,
+        incomingTransfers,
+        outgoingTransfers,
+      });
+    };
+
+    if (account && contract) {
+      const incomingTransferFilter = contract.filters.Transfer(null, account);
+      const outgoingTransferFilter = contract.filters.Transfer(account, null);
+      contract.on(incomingTransferFilter, onIncomingTransfer);
+      contract.on(outgoingTransferFilter, onOutgoingTransfer);
+      initializeCollection();
+      return () => {
+        contract.off(incomingTransferFilter, onIncomingTransfer);
+        contract.off(outgoingTransferFilter, onOutgoingTransfer);
+      };
+    }
+  }, [account, contract, dispatch]);
+
+  return state.type === "ready" ? state.owned : [];
 }
