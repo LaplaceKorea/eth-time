@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import ETH_TIME_ABI from "../abis/EthTime.json";
 
 
-const ETH_TIME_ADDRESS = "0x0d5475b052d2b62a8c5bb6ba687226659a9b15ae";
+const ETH_TIME_ADDRESS = "0x7517fb03dca3be0f66046a3da8478058990b68e3";
 
 const EthTimeInterface = new Interface(ETH_TIME_ABI.abi);
 

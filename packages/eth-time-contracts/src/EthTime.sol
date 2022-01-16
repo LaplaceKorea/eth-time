@@ -117,7 +117,7 @@ contract EthTime is ERC721("ETH Time", "ETHT"), ReentrancyGuard {
         return
             string(
                 bytes.concat(
-                    'data:application/json;bas64,',
+                    'data:application/json;base64,',
                     bytes(
                         Base64.encode(
                             bytes.concat(
