@@ -152,10 +152,24 @@ const MetadataBox = styled("div", {
   justifyContent: "center",
   alignItems: "center",
   borderRadius: 5,
-  background: "#E3E3E3",
+  boxShadow: "5px 5px 0px #E3E3E3",
   border: "1px solid #BBB",
   padding: "1rem 2rem",
   gap: "1rem",
+});
+
+const ActionRow = styled("div", {
+  display: "flex",
+  flexDirection: "column",
+  width: "100%",
+});
+
+const SaveImageLink = styled("a", {
+  display: "flex",
+  fontSize: 24,
+  color: theme.colors.blue,
+  marginBottom: "2rem",
+  cursor: "pointer",
 });
 
 const TransferRow = styled("div", {
@@ -273,19 +287,28 @@ export function InformationModal({ id }: InformationModalProps) {
           </OwnerRoot>
           <MetadataRoot>{metadataBoxes}</MetadataRoot>
         </InfoRow>
-        <TransferRow>
-          <TransferInput
-            placeholder="Transfer to"
-            onChange={(evt) => setDestination(evt.target.value)}
-            value={destination}
-          />
-          <TransferButton
-            disabled={!account || !destinationAddress}
-            onClick={transfer}
+        <ActionRow>
+          <SaveImageLink
+            download={`${meta?.name}.svg`}
+            href={meta?.image}
+            title={meta?.name}
           >
-            Transfer
-          </TransferButton>
-        </TransferRow>
+            Save Image
+          </SaveImageLink>
+          <TransferRow>
+            <TransferInput
+              placeholder="Transfer to"
+              onChange={(evt) => setDestination(evt.target.value)}
+              value={destination}
+            />
+            <TransferButton
+              disabled={!account || !destinationAddress}
+              onClick={transfer}
+            >
+              Transfer
+            </TransferButton>
+          </TransferRow>
+        </ActionRow>
       </DataRoot>
     </InformationModalRoot>
   );
